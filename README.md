@@ -1,40 +1,59 @@
-# Telegram Music Search Bot
+# Telegram YouTube Music Bot
 
-The bot searches the iTunes catalog by song title and singer/artist, then replies
-with matching tracks and buttons for available previews and track pages. It uses
-Telegram long polling, so it does not need a public web server and Telegram users
-can use it from any device.
+Searches YouTube Music (via the unofficial `ytmusicapi`) and sends the audio
+file directly to the user's Telegram chat using `yt-dlp` for downloading.
 
-## Run locally
+## Features
 
-1. Create a Telegram bot with [@BotFather](https://t.me/BotFather) and copy its
-   token. Keep the token private.
-2. Install Python 3.9 or newer and install the dependencies:
+- Search by any text — song name, artist, or both (`Song - Artist`)
+- `/search` command for step-by-step prompts
+- Results shown as an inline keyboard — tap any result to download it
+- Audio sent as a Telegram audio file (saved in the user's chat)
+- Cleans up temp files after every send
+- Works without FFmpeg (falls back to raw audio); with FFmpeg installed it
+  remuxes to MP3 at 192 kbps for best Telegram player compatibility
+
+## Requirements
+
+- Python 3.10 or newer
+- FFmpeg on PATH is **recommended** (for MP3 conversion) but optional
+
+## Setup
+
+1. Create a bot with [@BotFather](https://t.me/BotFather) and copy the token.
+
+2. Install dependencies:
 
    ```powershell
-   python -m pip install -r requirements.txt
+   pip install -r requirements.txt
    ```
 
-3. Set the token and start the bot:
+3. Set the token and start:
 
    ```powershell
    $env:TELEGRAM_BOT_TOKEN = "paste-your-token-here"
    python music_bot.py
    ```
 
-4. Open your bot in Telegram and send `/start`.
+4. Open the bot in Telegram and send `/start`.
 
-Users can send `/search` to be prompted for the song and singer, or send both in
-one message, for example `Never Gonna Give You Up - Rick Astley`. `/cancel`
-stops an interactive search.
+## Usage
+
+| Action | How |
+|---|---|
+| Search | Type any song name or `Song - Artist` |
+| Step-by-step | `/search` then type the name when prompted |
+| Download | Tap a result button — the audio arrives as a file |
+| Cancel | `/cancel` during a search conversation |
+
+## Notes
+
+- Telegram bots can upload files up to **50 MB**. Tracks longer than ~1 hour
+  may be rejected; the bot will tell you if that happens.
+- The bot uses long polling — no public URL or webhook is needed.
+- Keep `TELEGRAM_BOT_TOKEN` out of source code and version control.
 
 ## Deploy
 
-Run `python music_bot.py` on a machine or hosting service that stays online and
-has outbound internet access. Set `TELEGRAM_BOT_TOKEN` as a secret environment
-variable in that host's settings; do not put the token in source code or commit
-it to version control. Long polling means no Telegram webhook URL or public
-inbound port is required.
-
-The bot links to catalog entries and available short previews; it does not
-download or provide full copyrighted tracks.
+Run `python music_bot.py` on any machine with outbound internet access and set
+`TELEGRAM_BOT_TOKEN` as an environment variable or secret in your host's config.
