@@ -62,19 +62,35 @@ async function searchTracks(song: string, artist: string): Promise<Track[]> {
   searchUrl.searchParams.set("entity", "song");
   searchUrl.searchParams.set("limit", "10");
 
-  const resp = await fetch(searchUrl.toString(), {
-    headers: { "User-Agent": "MusicBot/1.0" },
-  });
+  const maxRetries = 3;
+  const baseDelayMs = 1000;
 
-  if (!resp.ok) {
-    throw new Error(`iTunes API returned status ${resp.status}`);
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    const resp = await fetch(searchUrl.toString(), {
+      headers: { "User-Agent": "MusicBot/1.0" },
+    });
+
+    if (resp.status === 429) {
+      if (attempt < maxRetries) {
+        const delay = baseDelayMs * Math.pow(2, attempt - 1);
+        await new Promise((r) => setTimeout(r, delay));
+        continue;
+      }
+      throw new Error("iTunes API is rate-limited. Please try again later.");
+    }
+
+    if (!resp.ok) {
+      throw new Error(`iTunes API returned status ${resp.status}`);
+    }
+
+    const data = (await resp.json()) as SearchResponse;
+    if (!data || !Array.isArray(data.results)) {
+      throw new Error("Invalid response from music search service");
+    }
+    return data.results;
   }
 
-  const data = (await resp.json()) as SearchResponse;
-  if (!data || !Array.isArray(data.results)) {
-    throw new Error("Invalid response from music search service");
-  }
-  return data.results;
+  throw new Error("Search failed after retries");
 }
 
 function escapeHtml(value: string): string {
