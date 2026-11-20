@@ -104,8 +104,14 @@ _COOKIEFILE = ""
 
 _ERR: dict[str, str] = {
     "DOWNLOAD_FAILED": (
-        "❌ Download failed. The track may be unavailable, region-locked, or "
-        "the source does not permit downloads.\n<code>[DOWNLOAD_FAILED]</code>"
+        "❌ Download failed. The track may be unavailable or region-locked.\n"
+        "<code>[DOWNLOAD_FAILED]</code>"
+    ),
+    "YOUTUBE_BLOCKED": (
+        "❌ YouTube is blocking downloads from this server.\n"
+        "Try a <b>SoundCloud</b> result instead — those download reliably.\n"
+        "Or set the <code>YOUTUBE_COOKIES</code> env var in Railway.\n"
+        "<code>[YOUTUBE_BLOCKED]</code>"
     ),
     "FILE_TOO_LARGE": (
         f"❌ That track exceeds Telegram's {MAX_FILE_MB} MB upload limit.\n"
@@ -249,6 +255,11 @@ def _rank_score(track: dict, query: str) -> float:
     dur = track.get("duration") or 0
     if dur and dur > 600:
         score -= 15
+
+    # Boost downloadable tracks so users try those first.
+    # SoundCloud works reliably; YouTube Music often blocks datacenter IPs.
+    if track.get("can_download") and track.get("download_url"):
+        score += 15
 
     return score
 
@@ -663,7 +674,16 @@ def download_audio(url: str, tmpdir: str) -> tuple[str, dict]:
     try:
         with yt_dlp.YoutubeDL(opts) as ydl:
             info = ydl.extract_info(url, download=True) or {}
-    except yt_dlp.utils.DownloadError:
+    except yt_dlp.utils.DownloadError as exc:
+        err_msg = str(exc).lower()
+        # Detect YouTube bot-detection specifically so we can give a
+        # helpful "try SoundCloud instead" message to the user.
+        if any(kw in err_msg for kw in (
+            "sign in to confirm", "not a bot", "429",
+            "confirm you", "cookies",
+        )):
+            logger.warning("YOUTUBE_BLOCKED url=%r", url)
+            raise RuntimeError("YOUTUBE_BLOCKED")
         logger.exception("DOWNLOAD_FAILED [DownloadError] url=%r", url)
         raise RuntimeError("DOWNLOAD_FAILED")
     except Exception:
