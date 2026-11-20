@@ -33,6 +33,9 @@ export default {
     const artist = url.searchParams.get("artist")?.trim();
     const format = url.searchParams.get("format") || "json";
 
+    if (!song && !artist) {
+      return renderHtml("", "", [], false);
+    }
     if (!song) {
       return jsonError("Missing required parameter: song", 400);
     }
@@ -103,7 +106,12 @@ function jsonError(message: string, status: number): Response {
   });
 }
 
-function renderHtml(song: string, artist: string, tracks: Track[]): Response {
+function renderHtml(
+  song: string,
+  artist: string,
+  tracks: Track[],
+  hasSearched = true,
+): Response {
   const cards = tracks
     .map((t) => {
       const artwork = t.artworkUrl100
@@ -128,6 +136,11 @@ function renderHtml(song: string, artist: string, tracks: Track[]): Response {
     main { max-width: 860px; margin: auto; }
     h1 { margin-bottom: .4rem; }
     .muted { color: #aab2c5; }
+    form { display: grid; grid-template-columns: 1fr 1fr auto; gap: .75rem; margin: 2rem 0; }
+    label { display: grid; gap: .4rem; font-size: .9rem; }
+    input, button { box-sizing: border-box; border: 1px solid #3a4255; border-radius: .6rem; padding: .8rem; font: inherit; }
+    input { background: #191e2a; color: inherit; }
+    button { align-self: end; border: 0; background: #8b7bff; color: #111; font-weight: 700; cursor: pointer; }
     .results { display: grid; gap: 1rem; }
     article { display: flex; gap: 1rem; align-items: flex-start; background: #191e2a; border-radius: .8rem; padding: 1rem; }
     article img { width: 96px; height: 96px; border-radius: .5rem; object-fit: cover; }
@@ -135,13 +148,20 @@ function renderHtml(song: string, artist: string, tracks: Track[]): Response {
     article p { margin: .25rem 0; }
     audio { display: block; width: min(100%, 360px); margin-top: .75rem; }
     .empty { padding: 1rem; border-radius: .6rem; background: #292439; }
+    @media (max-width: 620px) { form { grid-template-columns: 1fr; } button { min-height: 44px; } }
   </style>
 </head>
 <body>
   <main>
     <h1>Music Finder</h1>
-    <p class="muted">Results for "<b>${escapeHtml(song)}</b>" by "<b>${escapeHtml(artist)}</b>"</p>
-    ${tracks.length === 0 ? `<p class="empty">No music found. Check the names and try again.</p>` : `<section class="results">${cards}</section>`}
+  <p class="muted">${hasSearched ? `Results for "<b>${escapeHtml(song)}</b>" by "<b>${escapeHtml(artist)}</b>"` : "Search for a song by its title and singer or artist."}</p>
+  <form method="get">
+    <label>Song name <input name="song" value="${escapeHtml(song)}" required></label>
+    <label>Singer or artist <input name="artist" value="${escapeHtml(artist)}" required></label>
+    <input type="hidden" name="format" value="html">
+    <button type="submit">Search music</button>
+  </form>
+  ${!hasSearched ? "" : tracks.length === 0 ? `<p class="empty">No music found. Check the names and try again.</p>` : `<section class="results">${cards}</section>`}
   </main>
 </body>
 </html>`;

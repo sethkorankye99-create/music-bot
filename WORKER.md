@@ -12,13 +12,18 @@ A serverless music search bot that queries the iTunes catalog by song title and 
 
 ## Usage
 
+### Web page
+
+Open the deployed Worker URL in a browser to use the search form. Enter the song
+title and singer/artist; the results page includes available audio previews.
+
 ### JSON API
 
 ```
 GET /?song=Never%20Gonna%20Give%20You%20Up&artist=Rick%20Astley&format=json
 ```
 
-### HTML page
+### HTML results
 
 ```
 GET /?song=Never%20Gonna%20Give%20You%20Up&artist=Rick%20Astley&format=html
