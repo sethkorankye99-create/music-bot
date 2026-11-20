@@ -1,0 +1,16 @@
+{
+  "name": "music-bot",
+  "version": "1.0.0",
+  "description": "Cloudflare Worker music search bot using iTunes API",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "wrangler": "^3.0.0",
+    "@cloudflare/workers-types": "^4.0.0",
+    "vitest": "^1.0.0",
+    "@vitest/worker": "^1.0.0"
+  }
+}
